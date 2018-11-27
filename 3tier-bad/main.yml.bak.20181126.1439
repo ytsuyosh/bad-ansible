@@ -12,11 +12,9 @@
 #   Roles - what are roles?
 #   Bare variables
 #   No use of handlers
-#   Unnecessary tasks
-#   Unnecessary play(s)
 
 - name: configuration
-  hosts: all:!bastion
+  hosts: all
   gather_facts: false # remove later! speeds up testing
   become: true
 
@@ -124,19 +122,23 @@
     yum:
       name: postgresql-server
       state: latest
-  - name: enable apache at boot
+  - name: enable postgres at boot
     service:
       name: postgresql
       enabled: yes
   - name: tell user to finish setting up postgres
-    debug:
+    debug: 
       msg: "Either uncomment the postgres setup or manually login and initialize"
+
+  - name: check for postgres data directories
+    stat: path=/var/lib/pgsql/data/postgresql.conf
+    register: p
 
 # only run the next 2 tasks once!
   - name: initilize postgres
     command: postgresql-setup initdb
     when: not p.stat.exists
-    notify:
+    notify: 
       - restart postgres
   - name: initilize postgres some more
     command: chkconfig postgresql on
